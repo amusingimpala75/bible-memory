@@ -1,0 +1,19 @@
+[package]
+name = "bible-memory"
+version = "0.1.0"
+authors = ["amusingimpala75 <69653100+amusingimpala75@users.noreply.github.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dioxus = { version = "0.7.1", features = [] }
+regex = { version = "1.12.2", features = [] }
+reqwest = { version = "0.12.26", features = ["json"] }
+serde = "1.0.228"
+
+[features]
+default = ["mobile"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]

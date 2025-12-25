@@ -1,0 +1,18 @@
+#+AUTHOR: AmusingImpala75
+#+TITLE: Bible Memory Helper
+
+This project helps with bible memorization by providing an interface to fetch a bible passage and keep just the first letter of each word, to aid in the intermediate stage of memorization.
+
+* Dependencies
+This relies on a rust development environment, wasm-bindgen-cli, and dioxus-cli. These can be installed manually or using the nix flake provided.
+
+* Executing
+To run the web page, simply =dx serve --web= and navigate to the url listed.
+
+To run the desktop app, simply =dx serve --desktop= and navigate to the url listed.
+
+* Usage
+Provide the ESV API key and select the provided book, chapter, and verse and press submit. Note: the ESV API limits you to 500 verses a minute, so don't select too large of a passage. (Web page:) The requested verse can be printed with Cmd/Ctrl+P as usual, with a page break between the verse and the shortened text, although you can skip page break with the checkbox before the submit button.
+
+* License
+This project is licensed under the MIT license, see LICENSE for the text.

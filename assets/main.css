@@ -1,0 +1,67 @@
+:root {
+    --default-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --default-font-size: 18px;
+
+    --white: #fed;
+    --light-grey: #cba;
+    --dark-grey: #345;
+    --black: #012;
+
+    --text-color: var(--black);
+    --midground-color: var(--light-grey);
+    --background-color: var(--white);
+
+    font-family: var(--default-font-family);
+    font-size: var(--default-font-size);
+
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+#title {
+    font-size: calc(var(--default-font-size) * 1.5);
+}
+
+input, select, button {
+    color: var(--text-color);
+    background-color: var(--midground-color);
+}
+
+label {
+    padding-right: 4px;
+}
+
+div {
+    display: block;
+    padding: 8px;
+}
+
+#inputs {
+    display: flex;
+    justify-content: center;
+}
+
+#print-page-break {
+    page-break-after: always;
+    display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: var(--white);
+        --midground-color: var(--dark-grey);
+        --background-color: var(--black);
+    }
+}
+
+@media print {
+    :root {
+        font-size: 12px
+    }
+    div :not(.printable) :not(:has(.printable)), #title {
+        display: none;
+    }
+    #print-page-break {
+        display: block;
+    }
+}
