@@ -13,7 +13,7 @@ reqwest = { version = "0.12.26", features = ["json"] }
 serde = "1.0.228"
 
 [features]
-default = ["mobile"]
+default = ["desktop"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
