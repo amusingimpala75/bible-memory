@@ -15,12 +15,22 @@
       perSystem = { pkgs, ... }: let
         cargoToml = fromTOML (builtins.readFile ./Cargo.toml);
         rev = toString (self.shortRev or self.dirtyShortRev or self.lastModified or "unknown");
-        deps = with pkgs; [
-          binaryen
+
+        rustToolchain = with pkgs; [
           cargo
-          dioxus-cli
           lld
           rustc
+        ];
+
+        rustBuildInputs = with pkgs; [
+          binaryen
+          pkg-config
+        ] ++ (lib.optionals pkgs.stdenv.isLinux (with pkgs; [
+          glib
+        ]));
+
+        nativeBuildInputs = with pkgs; [
+          dioxus-cli
           # TODO waiting on #470538
           (buildWasmBindgenCli rec {
             src = pkgs.fetchCrate {
@@ -34,9 +44,7 @@
               hash = "sha256-Z8+dUXPQq7S+Q7DWNr2Y9d8GMuEdSnq00quUR0wDNPM=";
             };
           })
-        ] ++ (lib.optionals pkgs.stdenv.isLinux (with pkgs; [
-          glib
-        ]));
+        ] ++ rustToolchain;
       in
         {
           # Loosely based on this comment:
@@ -46,10 +54,10 @@
             version = "${cargoToml.package.version}-${rev}";
             src = lib.sources.cleanSource ./.;
             strictDeps = true;
-            nativeBuildInputs = [
-              pkgs.pkg-config
-              pkgs.rustPlatform.bindgenHook
-            ] ++ deps;
+            buildInputs = rustBuildInputs;
+            nativeBuildInputs = with pkgs; [
+              rustPlatform.bindgenHook
+            ] ++ rustBuildInputs ++ nativeBuildInputs;
             buildPhase = ''
               dx build --release --platform web
             '';
@@ -59,12 +67,13 @@
             '';
             cargoLock.lockFile = ./Cargo.lock;
           };
+
           devShells.default = pkgs.mkShell {
-            packages = [
-              pkgs.nixd
-              pkgs.rust-analyzer
-              pkgs.rustfmt
-            ] ++ deps;
+            packages = with pkgs; [
+              nixd
+              rust-analyzer
+              rustfmt
+            ] ++ nativeBuildInputs;
           };
         };
     });
