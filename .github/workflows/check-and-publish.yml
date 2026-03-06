@@ -18,7 +18,7 @@ jobs:
 
     - name: Build static files
       id: build
-      run: nix build .#default
+      run: nix -Lv build .#default
 
     - name: Upload static files as artifact
       id: upload

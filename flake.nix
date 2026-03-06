@@ -33,8 +33,10 @@
               inherit (src) pname version;
               hash = "sha256-Z8+dUXPQq7S+Q7DWNr2Y9d8GMuEdSnq00quUR0wDNPM=";
             };
-          })          
-        ];
+          })
+        ] ++ (lib.optionals pkgs.stdenv.isLinux (with pkgs; [
+          glib
+        ]));
       in
         {
           # Loosely based on this comment:
