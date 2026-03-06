@@ -11,10 +11,10 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
     - name: Checkout
-      use: actions/checkout@v4
+      uses: actions/checkout@v4
 
     - name: Install nix
-      use: cachix/install-nix-action@v31
+      uses: cachix/install-nix-action@v31
 
     - name: Build static files
       id: build
