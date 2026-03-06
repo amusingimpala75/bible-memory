@@ -28,6 +28,7 @@
         ] ++ (lib.optionals pkgs.stdenv.isLinux (with pkgs; [
           glib
           gtk3
+          libsoup_3
         ]));
 
         nativeBuildInputs = with pkgs; [
