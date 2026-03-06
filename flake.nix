@@ -23,7 +23,7 @@
         ];
 
         rustBuildInputs = with pkgs; [
-          binaryen
+          openssl
           pkg-config
         ] ++ (lib.optionals pkgs.stdenv.isLinux (with pkgs; [
           glib
@@ -31,6 +31,7 @@
         ]));
 
         nativeBuildInputs = with pkgs; [
+          binaryen
           dioxus-cli
           # TODO waiting on #470538
           (buildWasmBindgenCli rec {
