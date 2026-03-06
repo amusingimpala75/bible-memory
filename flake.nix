@@ -27,6 +27,7 @@
           pkg-config
         ] ++ (lib.optionals pkgs.stdenv.isLinux (with pkgs; [
           glib
+          gtk3
         ]));
 
         nativeBuildInputs = with pkgs; [
