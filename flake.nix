@@ -45,6 +45,7 @@
             src = lib.sources.cleanSource ./.;
             strictDeps = true;
             nativeBuildInputs = [
+              pkgs.pkg-config
               pkgs.rustPlatform.bindgenHook
             ] ++ deps;
             buildPhase = ''
