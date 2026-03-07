@@ -24,7 +24,7 @@ jobs:
       id: upload
       uses: actions/upload-pages-artifact@v3
       with:
-        path: result/web/public/
+        path: result/public/
 
   deploy:
     environment:

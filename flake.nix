@@ -64,11 +64,11 @@
               rustPlatform.bindgenHook
             ] ++ rustBuildInputs ++ nativeBuildInputs;
             buildPhase = ''
-              dx build --release --platform web
+              dx bundle --out-dir out -r
             '';
             installPhase = ''
               mkdir -p $out
-              cp -R target/dx/$pname/release/web $out/
+              cp -R out/public $out/
             '';
             cargoLock.lockFile = ./Cargo.lock;
           };
