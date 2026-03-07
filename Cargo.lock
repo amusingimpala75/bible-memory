@@ -166,6 +166,7 @@ name = "bible-memory"
 version = "0.1.0"
 dependencies = [
  "dioxus",
+ "futures",
  "regex",
  "reqwest",
  "serde",

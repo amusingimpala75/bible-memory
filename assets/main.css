@@ -27,6 +27,10 @@ input, select, button {
     background-color: var(--midground-color);
 }
 
+#control-inputs {
+    display: flex;
+}
+
 label {
     padding-right: 4px;
 }
@@ -36,9 +40,11 @@ div {
     padding: 8px;
 }
 
-#inputs {
+.reference-input {
     display: flex;
-    flex-wrap: wrap;
+}
+
+#inputs {
     justify-content: center;
 }
 
