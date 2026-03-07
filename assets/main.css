@@ -2,10 +2,10 @@
     --default-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --default-font-size: 18px;
 
-    --white: #fed;
-    --light-grey: #cba;
-    --dark-grey: #345;
-    --black: #012;
+    --white: #fff;
+    --black: #000;
+    --dark-grey: #555;
+    --light-grey: #DDD;
 
     --text-color: var(--black);
     --midground-color: var(--light-grey);
@@ -56,7 +56,7 @@ div {
 
 @media print {
     :root {
-        font-size: 12px
+        font-size: 12px;
     }
     div :not(.printable) :not(:has(.printable)), #title {
         display: none;
