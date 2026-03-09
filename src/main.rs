@@ -4,6 +4,7 @@ use regex::{Regex, Replacer};
 use std::iter::zip;
 use std::sync::LazyLock;
 use futures::future::try_join_all;
+use gloo_storage::{LocalStorage, Storage};
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -16,6 +17,10 @@ const BOOKS_TEXT: &str = include_str!("books.txt");
 static BOOKS: LazyLock<Vec<String>> = LazyLock::new(|| { BOOKS_TEXT.lines().map(|s| s.to_string() ).collect() });
 
 static WORD_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"([a-zA-Z]+)\s*").expect("invalid regex"));
+
+const API_KEY: &str = "api_key";
+const SINGLE_PAGE: &str = "single_page";
+const SHOW_WORD_COUNT: &str = "show_word_count";
 
 #[component]
 fn TextInputField(class: &'static str, label: &'static str, sig: Signal<String>) -> Element {
@@ -216,11 +221,14 @@ struct BibleResponse {
 
 #[component]
 fn App() -> Element {
-    // TODO remember api key with cookie?
-    let api_key = use_signal(|| String::new());
+    let api_key = use_signal(|| LocalStorage::get(API_KEY).unwrap_or(String::new()));
+    use_effect(move || { let _ = LocalStorage::set(API_KEY, api_key()); });
 
-    let mut show_word_count = use_signal(|| false);
-    let mut single_page = use_signal(|| false);
+    let mut show_word_count = use_signal(|| LocalStorage::get(SHOW_WORD_COUNT).unwrap_or(false));
+    use_effect(move || { let _ = LocalStorage::set(SHOW_WORD_COUNT, show_word_count()); });
+
+    let mut single_page = use_signal(|| LocalStorage::get(SINGLE_PAGE).unwrap_or(false));
+    use_effect(move || { let _ = LocalStorage::set(SINGLE_PAGE, single_page()); });
 
     let mut err_msg: Signal<Option<String>> = use_signal(|| None);
 
