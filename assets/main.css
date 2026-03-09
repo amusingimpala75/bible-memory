@@ -18,6 +18,11 @@
     background-color: var(--background-color);
 }
 
+a, a > label{
+    color: var(--text-color);
+    cursor: pointer;
+}
+
 #title {
     font-size: calc(var(--default-font-size) * 1.5);
 }

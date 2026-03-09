@@ -22,23 +22,6 @@ const API_KEY: &str = "api_key";
 const SINGLE_PAGE: &str = "single_page";
 const SHOW_WORD_COUNT: &str = "show_word_count";
 
-#[component]
-fn TextInputField(class: &'static str, label: &'static str, sig: Signal<String>) -> Element {
-    rsx! {
-        div {
-            label { "{label}" }
-            input {
-                class,
-                type: "text",
-                value: "{sig}",
-                onchange: move |data| {
-                    sig.set(data.data.value());
-                },
-            }
-        }
-    }
-}
-
 const DEFAULT_BOOK: &str = "John";
 const DEFAULT_VERSE: &str = "3:16";
 const DEFAULT_TEXT: &str = "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.";
@@ -58,6 +41,11 @@ struct VerseData {
 #[derive(Clone, PartialEq, Eq)]
 struct ConvertedVerseData {
     converted: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct BibleResponse {
+    passages: Vec<String>,
 }
 
 impl ReferenceData {
@@ -214,14 +202,10 @@ fn ConvertedVerses(
     }
 }
 
-#[derive(serde::Deserialize)]
-struct BibleResponse {
-    passages: Vec<String>,
-}
 
 #[component]
 fn App() -> Element {
-    let api_key = use_signal(|| LocalStorage::get(API_KEY).unwrap_or(String::new()));
+    let mut api_key = use_signal(|| LocalStorage::get(API_KEY).unwrap_or(String::new()));
     use_effect(move || { let _ = LocalStorage::set(API_KEY, api_key()); });
 
     let mut show_word_count = use_signal(|| LocalStorage::get(SHOW_WORD_COUNT).unwrap_or(false));
@@ -246,7 +230,21 @@ fn App() -> Element {
             div {
                 id: "control-inputs",
                 // TODO validate
-                TextInputField { class: "api-key", label: "API Key:", sig: api_key.clone() }
+                div {
+                    a {
+                        title: "I cannot provide an API key as there are rate limits. Please make an account with ESV directly and request an API key there.",
+                        href: "https://api.esv.org",
+                        label { "API Key:" }
+                    }
+                    input {
+                        class: "api-key",
+                        type: "text",
+                        value: "{api_key}",
+                        onchange: move |data| {
+                            api_key.set(data.data.value());
+                        },
+                    }
+                }
 
                 div {
                     label { "Show word count" }
