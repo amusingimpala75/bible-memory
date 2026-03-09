@@ -225,6 +225,24 @@ where
 }
 
 #[component]
+fn Checkbox(label: &'static str, signal: Signal<bool>) -> Element {
+    rsx! {
+        div {
+            class: "checkbox",
+            label { "{label}" }
+            input {
+                type: "checkbox",
+                checked: signal,
+                onchange: move |_| {
+                    signal.set(!signal());
+                }
+            }
+        }
+
+    }
+}
+
+#[component]
 fn App() -> Element {
     let mut api_key = local_storage_signal(API_KEY, String::new());
     let mut show_word_count = local_storage_signal(SHOW_WORD_COUNT, false);
@@ -271,27 +289,16 @@ fn App() -> Element {
                     }
                 }
 
-                div {
-                    label { "Show word count" }
-                    input {
-                        type: "checkbox",
-                        checked: show_word_count,
-                        onchange: move |_| {
-                            show_word_count.set(!show_word_count());
-                        }
-                    }
+                Checkbox {
+                    label: "Show word count",
+                    signal: show_word_count.clone(),
                 }
 
-                div {
-                    label { "Single page?" }
-                    input {
-                        type: "checkbox",
-                        checked: single_page,
-                        onchange: move |_| {
-                            single_page.set(!single_page());
-                        }
-                    }
+                Checkbox {
+                    label: "Single page?",
+                    signal: single_page.clone(),
                 }
+
                 div {
                     button {
                         id: "submit",
