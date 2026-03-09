@@ -15,6 +15,8 @@ fn main() {
 const BOOKS_TEXT: &str = include_str!("books.txt");
 static BOOKS: LazyLock<Vec<String>> = LazyLock::new(|| { BOOKS_TEXT.lines().map(|s| s.to_string() ).collect() });
 
+static WORD_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"([a-zA-Z]+)\s*").expect("invalid regex"));
+
 #[component]
 fn TextInputField(class: &'static str, label: &'static str, sig: Signal<String>) -> Element {
     rsx! {
@@ -45,6 +47,7 @@ struct ReferenceData {
 #[derive(Clone, PartialEq, Eq)]
 struct VerseData {
     verses: Vec<String>,
+    words: usize,
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -89,18 +92,22 @@ impl ReferenceData {
             .map(|(n, v)| format!("{n} {v}"))
             .collect();
 
-        Ok(VerseData { verses })
+        Ok(VerseData::init(verses))
     }
 }
 
 impl VerseData {
+    fn init(verses: Vec<String>) -> Self {
+        let words = verses.iter().map(|v| WORD_REGEX.find_iter(v).count()).sum();
+        Self { verses, words, }
+    }
     fn convert(&self) -> ConvertedVerseData {
         ConvertedVerseData { converted: convert_text(&self.verses) }
     }
 }
 
 #[component]
-fn Reference(references: Signal<Vec<ReferenceData>>, idx: usize) -> Element {
+fn Reference(references: Signal<Vec<ReferenceData>>, idx: usize ) -> Element {
     let books: &Vec<String> = &*BOOKS;
     
     rsx! {
@@ -147,12 +154,20 @@ fn Reference(references: Signal<Vec<ReferenceData>>, idx: usize) -> Element {
 }
 
 #[component]
-fn Verses(references: Signal<Vec<ReferenceData>>, verses: Signal<Vec<VerseData>>, idx: usize) -> Element {
+fn Verses(
+    references: Signal<Vec<ReferenceData>>,
+    verses: Signal<Vec<VerseData>>,
+    idx: usize,
+    show_word_count: Signal<bool>
+) -> Element {
     rsx! {
         div {
             class: "printable",
 
             "{references()[idx].book} {references()[idx].reference}"
+            if show_word_count() {
+                " ({verses()[idx].words} words)"
+            }
         }
 
         div {
@@ -162,17 +177,25 @@ fn Verses(references: Signal<Vec<ReferenceData>>, verses: Signal<Vec<VerseData>>
                 div { "{v}" }
             }
         }
-        
     }
 }
 
 #[component]
-fn ConvertedVerses(references: Signal<Vec<ReferenceData>>, converted: Memo<Vec<ConvertedVerseData>>, idx: usize) -> Element {
+fn ConvertedVerses(
+    references: Signal<Vec<ReferenceData>>,
+    verses: Signal<Vec<VerseData>>,
+    converted: Memo<Vec<ConvertedVerseData>>,
+    idx: usize,
+    show_word_count: Signal<bool>,
+) -> Element {
     rsx! {
         div {
             class: "printable",
 
             "{references()[idx].book} {references()[idx].reference}"
+            if show_word_count() {
+                " ({verses()[idx].words} words)"
+            }
         }
 
         div {
@@ -196,12 +219,13 @@ fn App() -> Element {
     // TODO remember api key with cookie?
     let api_key = use_signal(|| String::new());
 
+    let mut show_word_count = use_signal(|| false);
     let mut single_page = use_signal(|| false);
 
     let mut err_msg: Signal<Option<String>> = use_signal(|| None);
 
     let mut references = use_signal(|| vec!(ReferenceData::init()));
-    let mut verses = use_signal(||vec!(VerseData { verses: vec!(DEFAULT_TEXT.to_string()) }));
+    let mut verses = use_signal(||vec!(VerseData::init(vec!(DEFAULT_TEXT.to_string()))));
     let converted = use_memo(move || verses.read().iter().map(VerseData::convert).collect::<Vec<ConvertedVerseData>>() );
 
     rsx! {
@@ -215,6 +239,17 @@ fn App() -> Element {
                 id: "control-inputs",
                 // TODO validate
                 TextInputField { class: "api-key", label: "API Key:", sig: api_key.clone() }
+
+                div {
+                    label { "Show word count" }
+                    input {
+                        type: "checkbox",
+                        checked: show_word_count,
+                        onchange: move |_| {
+                            show_word_count.set(!show_word_count());
+                        }
+                    }
+                }
 
                 div {
                     label { "Single page?" }
@@ -239,9 +274,7 @@ fn App() -> Element {
                             } else {
                                 err_msg.set(Some("Error occured fetching verse data".to_string()));
                                 verses.set(
-                                    vec!(VerseData {
-                                        verses: vec!("".to_string())
-                                    })
+                                    vec!(VerseData::init(vec!("".to_string())))
                                     .into_iter()
                                     .cycle()
                                     .take(references().len())
@@ -256,7 +289,7 @@ fn App() -> Element {
                         id: "add_verse",
                         onclick: move|_| async move {
                             references.write().push(ReferenceData::init());
-                            verses.write().push(VerseData { verses: vec!(DEFAULT_TEXT.to_string()) })
+                            verses.write().push(VerseData::init(vec!(DEFAULT_TEXT.to_string())))
                         },
                         "+"
                     }
@@ -275,7 +308,7 @@ fn App() -> Element {
 
         div { "Original Text:" }
         for idx in 0..references().len() {
-            Verses { references, verses, idx }
+            Verses { references, verses, idx, show_word_count}
         }
 
         if !single_page() {
@@ -285,7 +318,7 @@ fn App() -> Element {
         div { "Memorization Text:" }
 
         for idx in 0..references().len() {
-            ConvertedVerses { references, converted, idx }
+            ConvertedVerses { references, verses, converted, idx, show_word_count }
         }
 
         if let Some(msg) = err_msg() {
@@ -296,7 +329,7 @@ fn App() -> Element {
 
 fn convert_text(src: &Vec<String>) -> Vec<String> {
     src.into_iter()
-        .map(|s| convert_verse_regex(s))
+        .map(|s| WORD_REGEX.replace_all(s, WordShortener).to_string())
         .collect()
 }
 
@@ -308,9 +341,4 @@ impl Replacer for WordShortener {
             word => dst.push_str(&word[..1].to_ascii_uppercase()),
         }
     }
-}
-
-fn convert_verse_regex(str: &String) -> String {
-    let word_select = Regex::new(r"([a-zA-Z]+)\s*").expect("invalid regex");
-    word_select.replace_all(str, WordShortener).to_string()
 }
