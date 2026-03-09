@@ -23,12 +23,12 @@
 }
 
 input, select, button {
-    color: var(--text-color);
     background-color: var(--midground-color);
 }
 
-#control-inputs {
+#control-inputs, .reference-input {
     display: flex;
+    flex-wrap: wrap;
 }
 
 label {
@@ -38,10 +38,12 @@ label {
 div {
     display: block;
     padding: 8px;
+    max-width: 100%;
 }
 
-.reference-input {
-    display: flex;
+.api-key, .reference, .book {
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 #inputs {
