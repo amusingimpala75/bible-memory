@@ -20,16 +20,22 @@ jobs:
       uses: nix-community/cache-nix-action@v7
       with:
         primary-key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        paths:
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
 
     - name: Build static files
       id: build
-      run: nix -Lv build .#default
+      run: nix develop --command dx bundle --release --out-dir out
 
     - name: Upload static files as artifact
       id: upload
       uses: actions/upload-pages-artifact@v3
       with:
-        path: result/public/
+        path: out/public/
 
   deploy:
     environment:
