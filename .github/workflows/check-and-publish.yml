@@ -16,6 +16,11 @@ jobs:
     - name: Install nix
       uses: cachix/install-nix-action@v31
 
+    - name: Use a nix cache
+      uses: nix-community/cache-nix-action@v7
+      with:
+        primary-key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
     - name: Build static files
       id: build
       run: nix -Lv build .#default
