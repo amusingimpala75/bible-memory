@@ -23,6 +23,7 @@
 }
 
 input, select, button {
+    color: var(--text-color);
     background-color: var(--midground-color);
 }
 
