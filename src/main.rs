@@ -1,10 +1,10 @@
 use dioxus::prelude::*;
-use reqwest;
-use regex::{Regex, Replacer};
-use std::iter::zip;
-use std::sync::LazyLock;
 use futures::future::try_join_all;
 use gloo_storage::{LocalStorage, Storage};
+use regex::{Regex, Replacer};
+use reqwest;
+use std::iter::zip;
+use std::sync::LazyLock;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -14,9 +14,11 @@ fn main() {
 }
 
 const BOOKS_TEXT: &str = include_str!("books.txt");
-static BOOKS: LazyLock<Vec<String>> = LazyLock::new(|| { BOOKS_TEXT.lines().map(|s| s.to_string() ).collect() });
+static BOOKS: LazyLock<Vec<String>> =
+    LazyLock::new(|| BOOKS_TEXT.lines().map(|s| s.to_string()).collect());
 
-static WORD_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"([a-zA-Z]+)\s*").expect("invalid regex"));
+static WORD_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"([a-zA-Z]+)\s*").expect("invalid regex"));
 
 const API_KEY: &str = "api_key";
 const SINGLE_PAGE: &str = "single_page";
@@ -24,7 +26,13 @@ const SHOW_WORD_COUNT: &str = "show_word_count";
 
 const DEFAULT_BOOK: &str = "John";
 const DEFAULT_VERSE: &str = "3:16";
-const DEFAULT_TEXT: &str = "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.";
+const DEFAULT_TEXT: &str = "For God so loved the world, that he gave his only Son,
+that whoever believes in him should not perish but have eternal life.
+";
+const API_KEY_MESSAGE: &str = "I cannot provide an API key as there are rate limits.
+Please make an account with ESV directly and request an API key there.
+";
+const FETCH_ERR_MSG: &str = "Error occured fetching verse data";
 
 #[derive(Clone, PartialEq, Eq)]
 struct ReferenceData {
@@ -76,10 +84,10 @@ impl ReferenceData {
 
         let splitter = Regex::new(r"\[[0-9]*\]").expect("invalid regex");
 
-        let verses = splitter.split(&text)
-            .skip(1);               // Skip first because it is empty (i.e. before the first verse marker)
-        let numbers = splitter.find_iter(&text)
-            .map(|s| s.as_str());
+        let verses = splitter.split(&text).skip(1);
+        // ^ Skip first because it is empty (i.e. before the first verse marker)
+
+        let numbers = splitter.find_iter(&text).map(|s| s.as_str());
 
         let verses = zip(numbers, verses)
             .map(|(n, v)| format!("{n} {v}"))
@@ -92,17 +100,19 @@ impl ReferenceData {
 impl VerseData {
     fn init(verses: Vec<String>) -> Self {
         let words = verses.iter().map(|v| WORD_REGEX.find_iter(v).count()).sum();
-        Self { verses, words, }
+        Self { verses, words }
     }
     fn convert(&self) -> ConvertedVerseData {
-        ConvertedVerseData { converted: convert_text(&self.verses) }
+        ConvertedVerseData {
+            converted: convert_text(&self.verses),
+        }
     }
 }
 
 #[component]
-fn Reference(references: Signal<Vec<ReferenceData>>, idx: usize ) -> Element {
+fn Reference(references: Signal<Vec<ReferenceData>>, idx: usize) -> Element {
     let books: &Vec<String> = &*BOOKS;
-    
+
     rsx! {
         if references.read().len() > 1 {
             div {
@@ -151,7 +161,7 @@ fn Verses(
     references: Signal<Vec<ReferenceData>>,
     verses: Signal<Vec<VerseData>>,
     idx: usize,
-    show_word_count: Signal<bool>
+    show_word_count: Signal<bool>,
 ) -> Element {
     rsx! {
         div {
@@ -193,37 +203,52 @@ fn ConvertedVerses(
 
         div {
             class: "printable verses",
-            
+
             for v in &converted()[idx].converted {
                 div { "{v}" }
             }
         }
-        
+
     }
 }
 
+fn local_storage_signal<T>(key: &'static str, def: T) -> Signal<T>
+where
+    T: serde::de::DeserializeOwned + serde::Serialize + Clone + 'static,
+{
+    let sig = use_signal(|| LocalStorage::get(key).unwrap_or(def));
+    use_effect(move || {
+        let val = sig.read().cloned();
+        let _ = LocalStorage::set(key, val);
+    });
+    sig
+}
 
 #[component]
 fn App() -> Element {
-    let mut api_key = use_signal(|| LocalStorage::get(API_KEY).unwrap_or(String::new()));
-    use_effect(move || { let _ = LocalStorage::set(API_KEY, api_key()); });
-
-    let mut show_word_count = use_signal(|| LocalStorage::get(SHOW_WORD_COUNT).unwrap_or(false));
-    use_effect(move || { let _ = LocalStorage::set(SHOW_WORD_COUNT, show_word_count()); });
-
-    let mut single_page = use_signal(|| LocalStorage::get(SINGLE_PAGE).unwrap_or(false));
-    use_effect(move || { let _ = LocalStorage::set(SINGLE_PAGE, single_page()); });
+    let mut api_key = local_storage_signal(API_KEY, String::new());
+    let mut show_word_count = local_storage_signal(SHOW_WORD_COUNT, false);
+    let mut single_page = local_storage_signal(SINGLE_PAGE, false);
 
     let mut err_msg: Signal<Option<String>> = use_signal(|| None);
 
-    let mut references = use_signal(|| vec!(ReferenceData::init()));
-    let mut verses = use_signal(||vec!(VerseData::init(vec!(DEFAULT_TEXT.to_string()))));
-    let converted = use_memo(move || verses.read().iter().map(VerseData::convert).collect::<Vec<ConvertedVerseData>>() );
+    let mut references = use_signal(|| vec![ReferenceData::init()]);
+    let mut verses = use_signal(|| vec![VerseData::init(vec![DEFAULT_TEXT.to_string()])]);
+    let converted = use_memo(move || {
+        verses
+            .read()
+            .iter()
+            .map(VerseData::convert)
+            .collect::<Vec<ConvertedVerseData>>()
+    });
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-        document::Meta { name: "viewport", content: "width=device-width, initial-scale=1.0" }
+        document::Meta {
+            name: "viewport",
+            content: "width=device-width, initial-scale=1.0"
+        }
         div { id: "title", "Bible Memorization Helper" }
         div {
             id: "inputs",
@@ -232,7 +257,7 @@ fn App() -> Element {
                 // TODO validate
                 div {
                     a {
-                        title: "I cannot provide an API key as there are rate limits. Please make an account with ESV directly and request an API key there.",
+                        title: API_KEY_MESSAGE,
                         href: "https://api.esv.org",
                         label { "API Key:" }
                     }
@@ -273,12 +298,14 @@ fn App() -> Element {
                         onclick: move |_| async move {
                             err_msg.set(None);
                             let mapped = try_join_all(
-                                references().iter().map(|r| r.fetch_verses(api_key().to_string()))
+                                references()
+                                .iter()
+                                .map(|r| r.fetch_verses(api_key().to_string()))
                             ).await;
                             if let Ok(v) = mapped {
                                 verses.set(v);
                             } else {
-                                err_msg.set(Some("Error occured fetching verse data".to_string()));
+                                err_msg.set(Some(FETCH_ERR_MSG.to_string()));
                                 verses.set(
                                     vec!(VerseData::init(vec!("".to_string())))
                                     .into_iter()
@@ -295,7 +322,9 @@ fn App() -> Element {
                         id: "add_verse",
                         onclick: move|_| async move {
                             references.write().push(ReferenceData::init());
-                            verses.write().push(VerseData::init(vec!(DEFAULT_TEXT.to_string())))
+                            verses.write().push(
+                                VerseData::init(vec!(DEFAULT_TEXT.to_string()))
+                            )
                         },
                         "+"
                     }
@@ -324,7 +353,13 @@ fn App() -> Element {
         div { "Memorization Text:" }
 
         for idx in 0..references().len() {
-            ConvertedVerses { references, verses, converted, idx, show_word_count }
+            ConvertedVerses {
+                references,
+                verses,
+                converted,
+                idx,
+                show_word_count
+            }
         }
 
         if let Some(msg) = err_msg() {
